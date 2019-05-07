@@ -23,12 +23,12 @@ def get_file():
 	f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 	print(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 	
-	start_printing()
+	start_printing(filename)
 	print("olakase")
 	
 	return ''
 	
-def start_printing():
+def start_printing(filename):
 	ssh_client = paramiko.SSHClient()										#Inicia un cliente SSH
 
 	ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())		#Establece la política para permitir la conexión con el host (confiar en el host)
@@ -51,10 +51,13 @@ def start_printing():
 		
 		
 	#Sube un archivo de impresión (.gcode) local al servidor OctoPrint
-	def upload_file():	
-		sftpout = sftp.put("/home/pi/Desktop/FlaskParamiko/uploaded_files/eddie.gcode", "/home/pi/.octoprint/uploads/eddie.gcode")
-																			#Copia un archivo local en el servidor SFTP (OctoPrint)
-		
+	def upload_file():
+		local_path = "/home/pi/Desktop/FlaskParamiko/uploaded_files/" + filename
+		remote_path = "/home/pi/.octoprint/uploads/" + filename				#Creamos las rutas de manera dinámica con el nombre de cada archivo
+																			#para evitar poner la ruta y el nombre del archivo estático en sftp.put
+			
+		sftpout = sftp.put(local_path, remote_path)							#Copia un archivo local en el servidor SFTP (OctoPrint)
+																			
 		print(sftpout)														#Imprime un objeto de tipo "SFTPAttributes" que contiene atributos del archivo copiado
 
 
@@ -107,6 +110,9 @@ def start_printing():
 
 	#Imprimir
 	#start_printing()
+	
+	sftp.close()															#Cierra la conexión SFTP
+	ssh_client.close()														#Cierra la conexión SSH
 
 
 if __name__ == '__main__':
