@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="../static/js/jquery-3.3.1.js"></script> <!-- fallback -->
+</head>
+
+<body>
+
+	<main>
+		<form method="POST" enctype="multipart/form-data">
+		<fieldset>
+			<legend>Test de impresión con Flask y Paramiko</legend>
+			
+			<input type="file" value="Send print file" name="file" required>
+			
+			<input type="submit" value="Enviar archivo y comenzar a imprimir">
+		</fieldset>
+		</form>
+	</main>
+	
+	<script>
+		$(document).ready(function(){
+			
+			$('form').on('submit', function(event){
+				//////
+				var formulario = new FormData( $('form')[0] ); //[0] IS REQUIRED
+				////// https://developer.mozilla.org/es/docs/Web/Guide/Usando_Objetos_FormData
+				
+				$.ajax({
+					data: formulario,
+					processData: false, //necessary to transfer a form with a 'file' type input
+					contentType: false,	//
+					type: 'POST',
+					url: '/getFile'
+				})
+				.done(function(){
+					var done_mssg = document.createElement("span"),
+						mssg_text = document.createTextNode("Archivo cargado");
+						
+					done_mssg.appendChild(mssg_text);
+					
+					$('fieldset')[0].appendChild(done_mssg);
+				})
+				.fail(function(){
+					var fail_mssg = document.createElement("span"),
+						mssg_text = document.createTextNode("Error en la carga del archivo");
+						
+					fail_mssg.appendChild(mssg_text);
+					
+					$('fieldset')[0].appendChild(fail_mssg);
+				});
+				
+				event.preventDefault(); //MAGIA POKEMON - I'm using AJAX to handle the form submit, not the sumbit button default function.
+										//So, if I don't use event.preventDefault(), ajax will submit the form, and so will try the submit 
+										//button default action, but because the form's action attribute is not specified, an error will occur.
+			});
+			
+		});
+	</script>
+</body>
+</html>
