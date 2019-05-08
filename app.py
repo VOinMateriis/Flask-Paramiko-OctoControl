@@ -13,8 +13,15 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def index():
 	return render_template('index.html')
 	
-@app.route('/getFile', methods = ['POST'])
-def get_file():
+@app.route('/getData', methods = ['POST'])
+def get_data():
+	
+	#FORM DATA REQUEST
+	data = request.form #Recibe los datos de los cuadros de texto desde el front-end
+	print(data)
+	
+	nozzle = data["nozzle_temp"]
+	bed = data["bed_temp"]
 
 	#FILE UPLOADING
 	f = request.files['file']
@@ -23,12 +30,12 @@ def get_file():
 	f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 	print(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 	
-	start_printing(filename)
+	start_printing(filename, nozzle, bed)
 	print("olakase")
 	
 	return ''
 	
-def start_printing(filename):
+def start_printing(filename, nozzle_temp, bed_temp):
 	ssh_client = paramiko.SSHClient()										#Inicia un cliente SSH
 
 	ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())		#Establece la política para permitir la conexión con el host (confiar en el host)
@@ -63,21 +70,27 @@ def start_printing(filename):
 
 	#Establece la temperatura de la punta
 	def set_nozzle_temp():
-		stdin, stdout, stderr = ssh_client.exec_command('cd oprint; cd local; cd bin; cd OctoControl; bash 8settemp 230')
+		set_nozzle_command = "cd oprint; cd local; cd bin; cd OctoControl; bash 8settemp " + nozzle_temp
+																			#Creamos el comando de forma dinámica con la temperatura obtenida desde el front-end
+		stdin, stdout, stderr = ssh_client.exec_command(set_nozzle_command)
 																			#8settemp -> establece la temperatura de la punta
 		print(stderr.read())
 		print(stdout.read())
 		
 	#Establece la temperatura de la cama
 	def set_bed_temp():
-		stdin, stdout, stderr = ssh_client.exec_command('cd oprint; cd local; cd bin; cd OctoControl; bash 8setbed 110')
+		set_bed_command = "cd oprint; cd local; cd bin; cd OctoControl; bash 8setbed " + bed_temp
+		
+		stdin, stdout, stderr = ssh_client.exec_command(set_bed_command)
 																			#8setbed -> establece la temperatura de la cama
 		print(stderr.read())
 		print(stdout.read())
 
 	#Selecciona el arhivo a imprimir
 	def select_file():
-		stdin, stdout, stderr = ssh_client.exec_command('cd oprint; cd local; cd bin; cd OctoControl; bash 8fselect ring.gcode')
+		select_file_command = "cd oprint; cd local; cd bin; cd OctoControl; bash 8fselect " + filename
+																			#Seleccionamos el archivo por su nombre de manera dinámica
+		stdin, stdout, stderr = ssh_client.exec_command(select_file_command)
 																			#8fselect -> selecciona el archivo .gcode de la ruta /home/pi/.octoprint/uploads
 		print(stderr.read())
 		print(stdout.read())
@@ -100,16 +113,16 @@ def start_printing(filename):
 	upload_file()
 
 	#Establecer temperatura de la punta
-	#set_nozzle_temp()
+	set_nozzle_temp()
 
 	#Establecer temperatura de la cama
-	#set_bed_temp()
+	set_bed_temp()
 
 	#Seleccionar archivo
-	#select_file()
+	select_file()
 
 	#Imprimir
-	#start_printing()
+	start_printing()
 	
 	sftp.close()															#Cierra la conexión SFTP
 	ssh_client.close()														#Cierra la conexión SSH
